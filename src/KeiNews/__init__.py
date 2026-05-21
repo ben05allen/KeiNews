@@ -1,0 +1,1 @@
+"""KeiNews package."""
