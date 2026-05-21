@@ -2,9 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import sys
-
-sys.path.insert(0, "../../src")
 
 from KeiNews.main import fetch_news
 

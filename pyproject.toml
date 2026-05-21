@@ -11,6 +11,9 @@ dependencies = [
     "typer>=0.25.1",
 ]
 
+[project.scripts]
+keinews = "KeiNews.cli:app"
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
