@@ -63,6 +63,7 @@ KeiNews/
 - [x] Added error handling & retry logic
 - [x] Phase 1 complete — all 6 tests pass
 - [x] All 12 tests pass (includes CLI tests: list, summarize, invalid index)
+- [x] CLI entry point `keinews` works — `uv run keinews list` fetches NHK RSS & displays articles
 
 ### Phase 1.5 — Dataclass refactor
 

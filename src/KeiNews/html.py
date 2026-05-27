@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 
 def fetch_article_text(url: str) -> str | None:
     """Fetch full article text from a NHK news link."""
+    print(f"DEBUG: Fetching {url}")
     try:
         response = requests.get(url, timeout=30)
         response.raise_for_status()

@@ -2,7 +2,7 @@
 
 import typer
 
-from KeiNews.main import fetch_news, summarize_with_lm_studio
+from KeiNews.main import fetch_news, summarize_with_lm_studio, save_summary_as_md
 from KeiNews.html import fetch_article_text
 
 
@@ -55,6 +55,8 @@ def summarize_article(
     )
     if summary:
         typer.echo(f"Summary:\n{summary}")
+        save_summary_as_md(article, summary)
+        typer.echo("\nTo view your summarized articles, run 'npm run dev' inside the 'astro-site' directory.")
     typer.echo("-" * 40)
 
 

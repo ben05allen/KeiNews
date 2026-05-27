@@ -3,6 +3,9 @@
 import dataclasses
 import feedparser
 import requests
+import os
+from pathlib import Path
+from datetime import datetime
 
 
 NHK_RSS_URL = "https://www3.nhk.or.jp/rss/news/cat0.xml"
@@ -28,6 +31,23 @@ NHK_categories = {
 }
 
 
+def save_summary_as_md(article: Article, summary: str):
+    """Save article summary as a Markdown file."""
+    os.makedirs("data/articles", exist_ok=True)
+    try:
+        dt = datetime.strptime(article.pubDate, "%a, %d %b %Y %H:%M:%S %Z")
+    except (ValueError, TypeError):
+        dt = datetime.now()
+    date_str = dt.strftime("%Y-%m-%d")
+    slug = "".join([c if c.isalnum() else "-" for c in article.title[:20]]).lower().strip("-")
+    filename = f"{date_str}-{slug}.md"
+    path = Path("data/articles") / filename
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(f"---\ntitle: {article.title}\ndate: {dt.isoformat()}\nlink: {article.link}\n---\n\n")
+        f.write(summary)
+    print(f"Saved: {path}")
+
+
 def fetch_news(url: str = NHK_RSS_URL) -> list[Article]:
     """Fetch news items from NHK RSS feed."""
     try:
@@ -41,10 +61,10 @@ def fetch_news(url: str = NHK_RSS_URL) -> list[Article]:
     for entry in feed.entries:
         items.append(
             Article(
-                title=entry.title,
-                link=entry.link,
-                description=entry.description,
-                pubDate=entry.published,
+                title=str(entry.get("title", "")),
+                link=str(entry.get("link", "")),
+                description=str(entry.get("description", "")),
+                pubDate=str(entry.get("published", "")),
             )
         )
     return items
@@ -62,6 +82,7 @@ def summarize_with_lm_studio(
         "Keep the summary concise but informative.\n\n"
         f"Title: {article.title}\n\n"
         f"Article: {article.description}"
+        "\n/no_think"
     )
     payload = {
         "model": "default",
