@@ -56,7 +56,9 @@ def summarize_article(
     if summary:
         typer.echo(f"Summary:\n{summary}")
         save_summary_as_md(article, summary)
-        typer.echo("\nTo view your summarized articles, run 'npm run dev' inside the 'astro-site' directory.")
+        typer.echo(
+            "\nTo view your summarized articles, run 'npm run dev' inside the 'astro-site' directory."
+        )
     typer.echo("-" * 40)
 
 
