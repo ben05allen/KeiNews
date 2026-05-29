@@ -1,7 +1,7 @@
 [project]
 name = "keinews"
 version = "0.1.0"
-description = "Fetch NHK news and summarize it with a local AI model (LM Studio) into simple Japanese"
+description = "Fetch NHK news and summarize it with a local AI model into simple Japanese"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

@@ -1,13 +1,21 @@
 """KeiNews CLI with Typer."""
 
+import signal
 import typer
 
-from KeiNews.main import fetch_news, summarize_with_lm_studio, save_summary_as_md
+from KeiNews.main import fetch_news, summarize_with_local_model, save_summary_as_md
 from KeiNews.html import fetch_article_text
 
 
 NHK_RSS_URL = "https://www3.nhk.or.jp/rss/news/cat0.xml"
-LM_STUDIO_URL = "http://192.168.11.64:1234/v1/chat/completions"
+
+
+class TimeOutException(Exception):
+    pass
+
+
+def timeout_handler(signum, frame):
+    raise TimeOutException("Summarize timed out!")
 
 
 app = typer.Typer(
@@ -49,10 +57,17 @@ def summarize_article(
         typer.echo("Could not fetch article text.")
         return
 
-    summary = summarize_with_lm_studio(
-        article,
-        url=LM_STUDIO_URL,
-    )
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(10)
+
+    summary = None
+    try:
+        summary = summarize_with_local_model(article)
+    except TimeOutException as e:
+        typer.echo(f"\n{e}")
+    finally:
+        signal.alarm(0)
+
     if summary:
         typer.echo(f"Summary:\n{summary}")
         save_summary_as_md(article, summary)

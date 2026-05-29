@@ -39,7 +39,7 @@ def test_main_fetch_and_summarize(mock_post, mock_get):
     )
     mock_get.return_value = mock_response
 
-    # LM Studio mock
+    # Local model mock
     mock_resp = MagicMock()
     mock_resp.json.return_value = {"choices": [{"message": {"content": "要約"}}]}
     mock_post.return_value = mock_resp

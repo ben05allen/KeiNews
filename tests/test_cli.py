@@ -38,7 +38,7 @@ def test_list_articles(mock_fetch):
 
 @patch("KeiNews.cli.fetch_news")
 @patch("KeiNews.cli.fetch_article_text")
-@patch("KeiNews.cli.summarize_with_lm_studio")
+@patch("KeiNews.cli.summarize_with_local_model")
 def test_summarize_article(mock_summarize, mock_fetch_text, mock_fetch):
     """summarize command fetches full text and summarizes."""
     mock_fetch.return_value = [

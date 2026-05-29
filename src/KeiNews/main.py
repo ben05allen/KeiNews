@@ -1,57 +1,121 @@
-"""KeiNews — Fetch NHK news RSS and summarize with LM Studio."""
+"""KeiNews — Fetch NHK news RSS and summarize with a local model."""
 
 import dataclasses
+from datetime import datetime
 import feedparser
 import re
 import requests
 import os
 from pathlib import Path
-from datetime import datetime
 
 
 # Hiragana-to-Romaji mapping (Hepburn)
 _HIRA_TO_ROMAJI = {
-    "あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
-    "か": "ka", "き": "ki", "く": "ku", "け": "ke", "こ": "ko",
-    "さ": "sa", "し": "shi", "す": "su", "せ": "se", "そ": "so",
-    "た": "ta", "ち": "chi", "つ": "tsu", "て": "te", "と": "to",
-    "な": "na", "に": "ni", "ぬ": "nu", "ね": "ne", "の": "no",
-    "は": "ha", "ひ": "hi", "ふ": "fu", "へ": "he", "ほ": "ho",
-    "ま": "ma", "み": "mi", "む": "mu", "め": "me", "も": "mo",
-    "や": "ya", "ゆ": "yu", "よ": "yo",
-    "ら": "ra", "り": "ri", "る": "ru", "れ": "re", "ろ": "ro",
-    "わ": "wa", "を": "wo", "ん": "n",
-    "がい": "gai", "ぎ": "gi", "ぐ": "gu", "げ": "ge", "ご": "go",
-    "ざ": "za", "じ": "ji", "ず": "zu", "ぜ": "ze", "ぞ": "zo",
-    "だ": "da", "ぢ": "di", "づ": "du", "で": "de", "ど": "do",
-    "ば": "ba", "び": "bi", "ぶ": "bu", "べ": "be", "ぼ": "bo",
-    "っ": "", "ぁ": "a", "ぃ": "i", "ぅ": "u", "ぇ": "e", "ぉ": "o",
-    "ゔ": "bu", "ゕ": "ka", "ゖ": "ke",
+    "あ": "a",
+    "い": "i",
+    "う": "u",
+    "え": "e",
+    "お": "o",
+    "か": "ka",
+    "き": "ki",
+    "く": "ku",
+    "け": "ke",
+    "こ": "ko",
+    "さ": "sa",
+    "し": "shi",
+    "す": "su",
+    "せ": "se",
+    "そ": "so",
+    "た": "ta",
+    "ち": "chi",
+    "つ": "tsu",
+    "て": "te",
+    "と": "to",
+    "な": "na",
+    "に": "ni",
+    "ぬ": "nu",
+    "ね": "ne",
+    "の": "no",
+    "は": "ha",
+    "ひ": "hi",
+    "ふ": "fu",
+    "へ": "he",
+    "ほ": "ho",
+    "ま": "ma",
+    "み": "mi",
+    "む": "mu",
+    "め": "me",
+    "も": "mo",
+    "や": "ya",
+    "ゆ": "yu",
+    "よ": "yo",
+    "ら": "ra",
+    "り": "ri",
+    "る": "ru",
+    "れ": "re",
+    "ろ": "ro",
+    "わ": "wa",
+    "を": "wo",
+    "ん": "n",
+    "がい": "gai",
+    "ぎ": "gi",
+    "ぐ": "gu",
+    "げ": "ge",
+    "ご": "go",
+    "ざ": "za",
+    "じ": "ji",
+    "ず": "zu",
+    "ぜ": "ze",
+    "ぞ": "zo",
+    "だ": "da",
+    "ぢ": "di",
+    "づ": "du",
+    "で": "de",
+    "ど": "do",
+"ぱ": "pa",
+    "ぴ": "pi",
+    "ぷ": "pu",
+    "ぺ": "pe",
+    "ぽ": "po",
+    "ば": "ba",
+    "び": "bi",
+    "ぶ": "bu",
+    "べ": "be",
+    "ぼ": "bo",
+    "っ": "",
+    "ぁ": "a",
+    "ぃ": "i",
+    "ぅ": "u",
+    "ぇ": "e",
+    "ぉ": "o",
+    "ゔ": "bu",
+    "ゕ": "ka",
+    "ゖ": "ke",
 }
 
 # Special long-vowel combinations (ー is katakana long vowel)
 # These are handled by the katakana-to-romaji step
 
 
+
 def _katakana_to_hiragana(text: str) -> str:
     """Convert katakana characters to hiragana."""
     result = []
-    i = 0
-    while i < len(text):
-        c = text[i]
+    for c in text:
         code = ord(c)
-        # Katakana range: \u30a0-\u30ff
+        # Katakana range: ゠-ヿ
         if 0x30A0 <= code <= 0x30FF:
-            # Convert to hiragana by offset
-            result.append(chr(code - 0x30A0 + 0x3040))
+            if c == 'ー':
+                result.append('ー')
+            else:
+                # Convert to hiragana by offset
+                result.append(chr(code - 0x30A0 + 0x3040))
         else:
             result.append(c)
-        i += 1
     return "".join(result)
-
-
 NHK_RSS_URL = "https://www3.nhk.or.jp/rss/news/cat0.xml"
-LM_STUDIO_URL = "http://192.168.11.64:1234/v1/chat/completions"
+# Generic local model URL
+LOCAL_MODEL_URL = "http://localhost:8215/v1/chat/completions"
 
 
 @dataclasses.dataclass
@@ -91,17 +155,39 @@ def _slugify_romanji(title: str) -> str:
         if i + 1 < len(text):
             two_char = text[i] + text[i + 1]
             special_combo = {
-                "きゃ": "kya", "きゅ": "kyu", "きょ": "kyo",
-                "しゃ": "sha", "しゅ": "shu", "しょ": "sho",
-                "ちゃ": "cha", "ちゅ": "chu", "ちょ": "cho",
-                "にゃ": "nya", "にゅ": "nyu", "にょ": "nyo",
-                "ひゃ": "hya", "ひゅ": "hyu", "ひょ": "hyo",
-                "みゃ": "mya", "みゅ": "myu", "みょ": "myo",
-                "りゃ": "rya", "りゅ": "ryu", "りょ": "ryo",
-                "ぎゃ": "gya", "ぎゅ": "gyu", "ぎょ": "gyo",
-                "じゃ": "ja", "じゅ": "ju", "じょ": "jo",
-                "びゃ": "bya", "びゅ": "byu", "びょ": "byo",
-                "ぴゃ": "pya", "ぴゅ": "pyu", "ぴょ": "pyo",
+                "きゃ": "kya",
+                "きゅ": "kyu",
+                "きょ": "kyo",
+                "しゃ": "sha",
+                "しゅ": "shu",
+                "しょ": "sho",
+                "ちゃ": "cha",
+                "ちゅ": "chu",
+                "ちょ": "cho",
+                "にゃ": "nya",
+                "にゅ": "nyu",
+                "にょ": "nyo",
+                "ひゃ": "hya",
+                "ひゅ": "hyu",
+                "ひょ": "hyo",
+                "みゃ": "mya",
+                "みゅ": "myu",
+                "みょ": "myo",
+                "りゃ": "rya",
+                "りゅ": "ryu",
+                "りょ": "ryo",
+                "ぎゃ": "gya",
+                "ぎゅ": "gyu",
+                "ぎょ": "gyo",
+                "じゃ": "ja",
+                "じゅ": "ju",
+                "じょ": "jo",
+                "びゃ": "bya",
+                "びゅ": "byu",
+                "びょ": "byo",
+                "ぴゃ": "pya",
+                "ぴゅ": "pyu",
+                "ぴょ": "pyo",
             }
             if two_char in special_combo:
                 romaji_parts.append(special_combo[two_char])
@@ -111,11 +197,12 @@ def _slugify_romanji(title: str) -> str:
         c = text[i]
         if c in _HIRA_TO_ROMAJI:
             romaji_parts.append(_HIRA_TO_ROMAJI[c])
+            i += 1
         elif c == "ー":
             # Katakana long vowel mark — preserve the vowel sound
             if romaji_parts:
                 # Extend last vowel (simple: just keep it)
-                pass
+                romaji_parts.append(romaji_parts[-1][-1])
             i += 1
         else:
             # Keep ASCII characters (letters, digits, punctuation)
@@ -130,9 +217,7 @@ def _slugify_romanji(title: str) -> str:
 
     # Clean up: replace non-alphanumeric with single dash, strip dashes
     slug = (
-        "".join(c if c.isalnum() else "-" for c in result.lower())
-        .strip("-")
-        .strip(".")
+        "".join(c if c.isalnum() else "-" for c in result.lower()).strip("-").strip(".")
     )
     # Collapse multiple dashes
     slug = re.sub(r"-+-", "-", slug)
@@ -144,10 +229,11 @@ def save_summary_as_md(article: Article, summary: str):
     os.makedirs("data/articles", exist_ok=True)
     try:
         dt = datetime.strptime(article.pubDate, "%a, %d %b %Y %H:%M:%S %Z")
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         dt = datetime.now()
     date_str = dt.strftime("%Y-%m-%d")
     slug = _slugify_romanji(article.title[:50])
+    # slug = article.title[:50]
     filename = f"{date_str}-{slug}.md"
     path = Path("data/articles") / filename
     with open(path, "w", encoding="utf-8") as f:
@@ -180,11 +266,11 @@ def fetch_news(url: str = NHK_RSS_URL) -> list[Article]:
     return items
 
 
-def summarize_with_lm_studio(
+def summarize_with_local_model(
     article: Article,
-    url: str = LM_STUDIO_URL,
+    url: str = LOCAL_MODEL_URL,
 ) -> str | None:
-    """Send article to LM Studio for a simple Japanese summary."""
+    """Send article to the local model for a simple Japanese summary."""
     prompt = (
         "Summarize the following Japanese news article into "
         "2 to 3 paragraphs of simple Japanese. "
@@ -200,10 +286,17 @@ def summarize_with_lm_studio(
         "max_tokens": 1024,
     }
     try:
-        response = requests.post(url, json=payload)
+        # 5 seconds to connect, 30 seconds to get the response
+        response = requests.post(url, json=payload, timeout=(5, 30))
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"]
+    except requests.exceptions.ConnectionError:
+        print(f"Error: Could not connect to local model at {url}. Is it running?")
+        return None
+    except requests.exceptions.Timeout:
+        print("Error: Request to local model timed out.")
+        return None
     except requests.exceptions.RequestException as e:
         print(f"Error summarizing: {e}")
         return None
@@ -218,7 +311,7 @@ def main():
     for item in items[:3]:  # Process top 3 items
         print(f"Title: {item.title}")
         print(f"Date: {item.pubDate}")
-        summary = summarize_with_lm_studio(item)
+        summary = summarize_with_local_model(item)
         if summary:
             print(f"Summary:\n{summary}")
         print("-" * 40)
@@ -228,3 +321,4 @@ if __name__ == "__main__":
     from KeiNews.cli import app
 
     app()
+# I need to edit the file to add these

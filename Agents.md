@@ -16,7 +16,7 @@ This adds the package to `[project.optional-dependencies]` under the `dev` group
 
 ## Project Goal
 
-Fetch news stories from NHK (日本放送協会) and use a local model served by LM Studio to summarize each story into 2–3 paragraphs of simple Japanese.
+Fetch news stories from NHK (日本放送協会) and use a local AI model to summarize each story into 2–3 paragraphs of simple Japanese.
 
 ## Project Structure
 
@@ -56,9 +56,9 @@ KeiNews/
 - [x] Added pytest for testing
 - [x] Added requests dependency
 - [x] Implemented NHK RSS feed fetching in `main.py`
-- [x] Implemented LM Studio API call for summarization
+- [x] Implemented local model API call for summarization
 - [x] Added tests for RSS fetching (3 passed)
-- [x] Added tests for LM Studio summarization (2 passed)
+- [x] Added tests for local model summarization (2 passed)
 - [x] Added end-to-end test (1 passed)
 - [x] Added error handling & retry logic
 - [x] Phase 1 complete — all 6 tests pass
@@ -69,7 +69,7 @@ KeiNews/
 
 - [x] Created `Article` dataclass (title, link, description, pubDate)
 - [x] Updated `fetch_news` to return `list[Article]`
-- [x] Updated `summarize_with_lm_studio` to take `Article`
+- [x] Updated `summarize_with_local_model` to take `Article`
 - [x] Updated `main` to use `Article` fields
 - [x] Updated tests to use `Article` (6 pass)
 - [x] Added NHK categories dict (cat0–cat6)
@@ -84,7 +84,7 @@ KeiNews/
 ## Constraints & Preferences
 
 - Summaries must be 2–3 paragraphs in **simple Japanese**
-- Uses local LM Studio model (no API costs)
+- Uses local AI model (no API costs)
 - Python ≥ 3.14
 - Uses NHK RSS feed (`https://www3.nhk.or.jp/rss/news/cat0.xml`)
 

@@ -1,13 +1,13 @@
-"""Tests for KeiNews LM Studio summarization."""
+"""Tests for KeiNews local model summarization."""
 
 from unittest.mock import MagicMock, patch
 
-from KeiNews.main import summarize_with_lm_studio, Article
+from KeiNews.main import summarize_with_local_model, Article
 
 
 @patch("KeiNews.main.requests.post")
 def test_summarize_returns_text(mock_post):
-    """summarize_with_lm_studio returns summary text."""
+    """summarize_with_local_model returns summary text."""
     mock_response = MagicMock()
     mock_response.json.return_value = {
         "choices": [{"message": {"content": "テストの要約"}}]
@@ -20,14 +20,14 @@ def test_summarize_returns_text(mock_post):
         description="Test content",
         pubDate="Mon, 01 Jan 2026 00:00:00 +0900",
     )
-    result = summarize_with_lm_studio(article)
+    result = summarize_with_local_model(article)
 
     assert result == "テストの要約"
 
 
 @patch("KeiNews.main.requests.post")
 def test_summarize_raises_on_error(mock_post):
-    """summarize_with_lm_studio raises HTTPError on failed response."""
+    """summarize_with_local_model raises HTTPError on failed response."""
     mock_response = MagicMock()
     mock_response.raise_for_status.side_effect = Exception("HTTP error")
     mock_post.return_value = mock_response
@@ -40,6 +40,6 @@ def test_summarize_raises_on_error(mock_post):
     )
 
     try:
-        summarize_with_lm_studio(article)
+        summarize_with_local_model(article)
     except Exception as e:
         assert str(e) == "HTTP error"
