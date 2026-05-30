@@ -1,0 +1,36 @@
+---
+import BaseHead from '../components/BaseHead.astro'
+import Footer from '../components/Footer.astro'
+import Header from '../components/Header.astro'
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts'
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <h1>KeiNews: 最新ニュースをお届け</h1>
+      <p>
+        KeiNewsは、自動的に収集された最新のニュース情報を整理して提供するプラットフォームです。
+        インテリジェンス機能の強化や最新の気象情報など、重要な出来事をいち早くキャッチできます。
+      </p>
+      <h2>主なカテゴリー</h2>
+      <ul>
+        <li>
+          <a href="/blog">ニュース一覧</a>: 最新のニュース記事を時系列で閲覧できます。
+        </li>
+        <li>
+          <a href="/about">KeiNewsについて</a>: このプロジェクトの目的や背景を紹介しています。
+        </li>
+      </ul>
+      <p>
+        KeiNewsは、正確かつ迅速な情報提供を目指しています。最新情報は<a href="/blog">ニュース一覧</a>からご確認ください。
+      </p>
+    </main>
+    <Footer />
+  </body>
+</html>
