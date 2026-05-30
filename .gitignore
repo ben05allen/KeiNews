@@ -6,6 +6,9 @@ dist/
 wheels/
 *.egg-info
 
+# Astro files
+node_modules/
+
 # Virtual environments
 .venv
 

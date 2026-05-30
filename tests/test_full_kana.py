@@ -1,4 +1,5 @@
 from KeiNews.main import _katakana_to_hiragana
+
 text = "ニュース"
 print(f"Input: {text}")
 hira = _katakana_to_hiragana(text)
