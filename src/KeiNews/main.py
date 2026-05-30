@@ -72,7 +72,7 @@ _HIRA_TO_ROMAJI = {
     "づ": "du",
     "で": "de",
     "ど": "do",
-"ぱ": "pa",
+    "ぱ": "pa",
     "ぴ": "pi",
     "ぷ": "pu",
     "ぺ": "pe",
@@ -97,7 +97,6 @@ _HIRA_TO_ROMAJI = {
 # These are handled by the katakana-to-romaji step
 
 
-
 def _katakana_to_hiragana(text: str) -> str:
     """Convert katakana characters to hiragana."""
     result = []
@@ -105,14 +104,16 @@ def _katakana_to_hiragana(text: str) -> str:
         code = ord(c)
         # Katakana range: ゠-ヿ
         if 0x30A0 <= code <= 0x30FF:
-            if c == 'ー':
-                result.append('ー')
+            if c == "ー":
+                result.append("ー")
             else:
                 # Convert to hiragana by offset
                 result.append(chr(code - 0x30A0 + 0x3040))
         else:
             result.append(c)
     return "".join(result)
+
+
 NHK_RSS_URL = "https://www3.nhk.or.jp/rss/news/cat0.xml"
 # Generic local model URL
 LOCAL_MODEL_URL = "http://localhost:8215/v1/chat/completions"
